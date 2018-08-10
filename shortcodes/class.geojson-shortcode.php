@@ -55,9 +55,10 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
         } 
 
         wp_enqueue_script('leaflet_ajax_geojson_js');
-        wp_enqueue_script('leaflet_svg_icon_js');
-        wp_enqueue_style('markericons_stylesheet');
-      
+        if(!empty($icon_property)) {
+          wp_enqueue_script('leaflet_svg_icon_js');
+          wp_enqueue_style('markericons_stylesheet');  
+        }      
 
         if ($content) {
             $content = str_replace(array("\r\n", "\n", "\r"), '<br>', $content);
@@ -81,8 +82,10 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
         $popup_text = empty($content_text) ? $popup_text : $content_text;
 
         $popup_property = empty($popup_property) ? '' : $popup_property;
-
         $popup_text = trim($popup_text);
+      
+        $icon_property = empty($icon_property) ? '' : $icon_property;
+        $icon_property = trim($icon_property);
 
         ob_start();
         ?>
@@ -107,6 +110,7 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
                     fitbounds = <?php echo $fitbounds; ?>,
                     popup_text = WPLeafletMapPlugin.unescape('<?php echo $popup_text; ?>'),
                     popup_property = '<?php echo $popup_property; ?>';
+                    icon_property = '<?php echo $icon_property; ?>';
                 if (fitbounds) {
                     layer.on('ready', function () {
                         this.map.fitBounds( this.getBounds() );
@@ -142,9 +146,8 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
                     }
                 }
                 function pointToLayer(feature, latlng) {
-                  if( feature.properties['marker-symbol']) {
-                    console.log('marker', feature.properties['marker-symbol']);
-                    return new L.SVGMarker(latlng, {iconClass: 'markericon-' + feature.properties['marker-symbol'] });  
+                  if(  icon_property && feature.properties[icon_property]) {
+                    return new L.SVGMarker(latlng, {iconClass: 'markericon-' + feature.properties[icon_property] });  
                   } else {
                     return L.marker(latlng);
                   }
