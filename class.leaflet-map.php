@@ -179,8 +179,11 @@ class Leaflet_Map
         $css_url = $settings->get('css_url');
 
         wp_register_style('leaflet_stylesheet', $css_url, Array(), null, false);
+        
         wp_register_script('leaflet_js', $js_url, Array(), null, true);
 
+        wp_register_style('markericons_stylesheet',  plugins_url('markericons/style.css', LEAFLET_MAP__PLUGIN_FILE), Array(), null, false);
+      
         // new required MapQuest javascript file
         $tiling_service = $settings->get('default_tiling_service');
 
@@ -197,7 +200,7 @@ class Leaflet_Map
 
         wp_register_script('leaflet_ajax_geojson_js', plugins_url('scripts/leaflet-ajax-geojson.min.js', __FILE__), Array('tmcw_togeojson', 'leaflet_js'), LEAFLET_MAP__PLUGIN_VERSION, false);
 
-        wp_register_script('leaflet_svg_icon_js', plugins_url('scripts/leaflet-svg-icon.min.js', __FILE__), Array('leaflet_js'), LEAFLET_MAP__PLUGIN_VERSION, false);
+        wp_register_script('leaflet_svg_icon_js', plugins_url('scripts/leaflet-svg-icon.js', __FILE__), Array('leaflet_js'), LEAFLET_MAP__PLUGIN_VERSION, false);
         
         /* run a construct function in the document head for subsequent functions to use (it is lightweight) */
         wp_enqueue_script('wp_leaflet_map', plugins_url('scripts/construct-leaflet-map.min.js', __FILE__), Array(), LEAFLET_MAP__PLUGIN_VERSION, false);

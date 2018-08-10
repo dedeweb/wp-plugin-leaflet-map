@@ -55,6 +55,9 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
         } 
 
         wp_enqueue_script('leaflet_ajax_geojson_js');
+        wp_enqueue_script('leaflet_svg_icon_js');
+        wp_enqueue_style('markericons_stylesheet');
+      
 
         if ($content) {
             $content = str_replace(array("\r\n", "\n", "\r"), '<br>', $content);
@@ -98,7 +101,8 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
                     layer = L.ajaxGeoJson(src, {
                         type: '<?php echo $class::$type; ?>',
                         style : layerStyle,
-                        onEachFeature : onEachFeature
+                        onEachFeature : onEachFeature,
+                        pointToLayer : pointToLayer
                     }),
                     fitbounds = <?php echo $fitbounds; ?>,
                     popup_text = WPLeafletMapPlugin.unescape('<?php echo $popup_text; ?>'),
@@ -129,12 +133,22 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
                     return style;
                 }      
                 function onEachFeature (feature, layer) {
+                  // console.log(feature, layer);
                     var props = feature.properties || {};
                     var text = popup_property && props[ popup_property ] || 
                         template(popup_text, feature.properties);
                     if (text) {
                         layer.bindPopup( text );
                     }
+                }
+                function pointToLayer(feature, latlng) {
+                  if( feature.properties['marker-symbol']) {
+                    console.log('marker', feature.properties['marker-symbol']);
+                    return new L.SVGMarker(latlng, {iconClass: 'markericon-' + feature.properties['marker-symbol'] });  
+                  } else {
+                    return L.marker(latlng);
+                  }
+                  
                 }
                 var templateRe = /\{ *([\w_-]+) *\}/g;
                 function template(str, data) {
