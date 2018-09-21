@@ -101,8 +101,6 @@ class Leaflet_Map_Shortcode extends Leaflet_Shortcode
                 $closepopuponclick : null,
             'trackResize' => isset($trackresize) ? $trackresize : null,
             'boxZoom' => isset($boxzoom) ? $boxzoom : null,
-            'doubleClickZoom' => isset($doubleclickzoom) ? 
-                $doubleclickzoom : null,
             'dragging' => isset($dragging) ? $dragging : null,
             'keyboard' => isset($keyboard) ? $keyboard : null
         );
@@ -196,7 +194,8 @@ class Leaflet_Map_Shortcode extends Leaflet_Shortcode
                 echo $width; 
             ?>;"></div>
         <script>
-        WPLeafletMapPlugin.add(function () {
+        window.WPLeafletMapPlugin = window.WPLeafletMapPlugin || [];
+        window.WPLeafletMapPlugin.push(function () {
             var baseUrl = '<?php echo $tileurl; ?>',
                 base = (!baseUrl && window.MQ) ? 
                     MQ.mapLayer() : L.tileLayer(baseUrl, { 
@@ -222,18 +221,17 @@ class Leaflet_Map_Shortcode extends Leaflet_Shortcode
             if ($attribution) :
                 /* add any attributions, semi-colon-separated */
                 $attributions = explode(';', $attribution);
-
                 ?>
                 var attControl = L.control.attribution({prefix:false}).addTo(map);
-            <?php
-            foreach ($attributions as $a):
-            ?>
+                <?php
+                foreach ($attributions as $a):
+                ?>
                     attControl.addAttribution('<?php echo trim($a); ?>');
-            <?php
-            endforeach;
+                <?php
+                endforeach;
             endif;
             ?>
-        WPLeafletMapPlugin.maps.push(map);
+            window.WPLeafletMapPlugin.maps.push(map);
         }); // end add
         </script><?php
 
