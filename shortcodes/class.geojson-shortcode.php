@@ -92,8 +92,7 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
         <script>
             window.WPLeafletMapPlugin = window.WPLeafletMapPlugin || [];
             window.WPLeafletMapPlugin.push(function () {
-                var previous_map = window.WPLeafletMapPlugin.getCurrentMap(),
-                    src = '<?php echo $src; ?>',
+                var src = '<?php echo $src; ?>',
                     default_style = <?php echo $style_json; ?>,
                     rewrite_keys = {
                         stroke : 'color',
@@ -106,18 +105,16 @@ class Leaflet_Geojson_Shortcode extends Leaflet_Shortcode
                         type: '<?php echo $class::$type; ?>',
                         style : layerStyle,
                         onEachFeature : onEachFeature,
-                        pointToLayer : pointToLayer
-                    }),
-                    fitbounds = <?php echo $fitbounds; ?>,
                     popup_text = window.WPLeafletMapPlugin.unescape('<?php echo $popup_text; ?>'),
-                    popup_property = '<?php echo $popup_property; ?>';
-                    icon_property = '<?php echo $icon_property; ?>';
+                    popup_property = '<?php echo $popup_property; ?>',
+                    group = window.WPLeafletMapPlugin.getCurrentGroup();   
+                layer.addTo( group );
+                window.WPLeafletMapPlugin.geojsons.push( layer );
                 if (fitbounds) {
                     layer.on('ready', function () {
                         this.map.fitBounds( this.getBounds() );
                     });
                 }
-                layer.addTo( previous_map );
                 function layerStyle (feature) {
                     var props = feature.properties || {};
                     var style = {};

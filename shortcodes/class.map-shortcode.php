@@ -54,11 +54,10 @@ class Leaflet_Map_Shortcode extends Leaflet_Shortcode
      * Merge shortcode options with default options
      *
      * @param array|string $atts    key value pairs from shortcode 
-     * @param string       $content inner text in shortcode
      * 
      * @return array new atts, which is actually an array
      */
-    protected function getAtts($atts='', $content=null)
+    protected function getAtts($atts='')
     {
         $atts = (array) $atts;
         extract($atts);
@@ -80,12 +79,40 @@ class Leaflet_Map_Shortcode extends Leaflet_Shortcode
             $scrollwheel : $settings->get('scroll_wheel_zoom');
         $atts['doubleclickzoom'] = array_key_exists('doubleclickzoom', $atts) ? 
             $doubleclickzoom : $settings->get('double_click_zoom');
+        
+        // @deprecated backwards-compatible fit_markers
         $atts['fit_markers'] = array_key_exists('fit_markers', $atts) ? 
             $fit_markers : $settings->get('fit_markers');
+
+        // fitbounds is what it should be called @since v2.12.0
+        $atts['fitbounds'] = array_key_exists('fitbounds', $atts) ? 
+            $fitbounds : $atts['fit_markers'];
 
         /* allow percent, but add px for ints */
         $atts['height'] .= is_numeric($atts['height']) ? 'px' : '';
         $atts['width'] .= is_numeric($atts['width']) ? 'px' : '';   
+
+        // maxbounds as string: maxbounds="50, -114; 52, -112"
+        $maxBounds = isset($maxbounds) ? $maxbounds : null;
+
+        if ($maxBounds) {
+            try {
+                // explode by semi-colons and commas
+                $maxBounds = preg_split("[;|,]", $maxBounds);
+                print_r($maxBounds);
+                $maxBounds = array(
+                    array(
+                        $maxBounds[0], $maxBounds[1]
+                    ),
+                    array(
+                        $maxBounds[2], $maxBounds[3]
+                    )
+                );
+                print_r($maxBounds);
+            } catch (Exception $e) {
+                $maxBounds = null;
+            }
+        }
 
         /* 
         need to allow 0 or empty for removal of attribution 
@@ -102,14 +129,18 @@ class Leaflet_Map_Shortcode extends Leaflet_Shortcode
             'trackResize' => isset($trackresize) ? $trackresize : null,
             'boxZoom' => isset($boxzoom) ? $boxzoom : null,
             'dragging' => isset($dragging) ? $dragging : null,
-            'keyboard' => isset($keyboard) ? $keyboard : null
+            'keyboard' => isset($keyboard) ? $keyboard : null,
         );
-        
+
         // filter out nulls
         $more_options = $this->LM->filter_null($more_options);
         
         // change string booleans to booleans
         $more_options = filter_var_array($more_options, FILTER_VALIDATE_BOOLEAN);
+
+        if ($maxBounds) {
+            $more_options['maxBounds'] = $maxBounds;
+        }
 
         // wrap as JSON
         if ($more_options) {
@@ -131,8 +162,7 @@ class Leaflet_Map_Shortcode extends Leaflet_Shortcode
     protected function enqueue()
     {
         wp_enqueue_style('leaflet_stylesheet');
-        wp_enqueue_script('leaflet_js');
-        wp_enqueue_script('leaflet_map_init');
+        wp_enqueue_script('wp_leaflet_map');
 
         if (wp_script_is('leaflet_mapquest_plugin', 'registered')) {
             // mapquest doesn't accept direct tile access as of July 11, 2016
@@ -214,8 +244,8 @@ class Leaflet_Map_Shortcode extends Leaflet_Shortcode
                     .setView([<?php 
                         echo $lat . ',' . $lng . '],' . $zoom; 
                     ?>);
-            if (<?php echo $fit_markers; ?>) {
-                map.fit_markers = true;
+            if (<?php echo $fitbounds; ?>) {
+                map._shouldFitBounds = true;
             }
             <?php
             if ($attribution) :

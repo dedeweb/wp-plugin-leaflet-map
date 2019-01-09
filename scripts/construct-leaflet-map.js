@@ -25,6 +25,18 @@
         };
 
         /**
+         * Same as above, but what if someone wants to execute a function
+         * before other functions?
+         */
+        this.unshift = function (fnc) {
+            if (ready) {
+                fnc();
+            } else {
+                callbacks.unshift(fnc);
+            }
+        }
+
+        /**
          * execute all callbacks once page/Leaflet is loaded
          */
         this.init = function() {
@@ -41,7 +53,11 @@
             return this.maps[this.maps.length - 1];
         };
 
-        this.getCurrentMarkerGroup = function () {
+        /**
+         * Get/Create L.FeatureGroup for ALL shapes; used for `fitbounds`
+         * @since 2.13.0
+         */
+        this.getCurrentGroup = function () {
             // marker groups are mapid -> feature group
             var mapid = this.maps.length;
             if (!this.markergroups[mapid]) {
@@ -50,23 +66,48 @@
             return this.markergroups[mapid];
         };
 
+        /** 
+         * backwards-compatible getCurrentGroup 
+         * @deprecated 2.13.0
+         */
+        this.getCurrentMarkerGroup = this.getCurrentGroup;
+
+        /**
+         * get FeatureGroup and add to map
+         * 
+         * ! This is extracted so that it can be overwritten by plugins
+         */
         this.getGroup = function (map) {
             return new L.FeatureGroup().addTo(map);
         };
 
+        /**
+         * group is created and event is added
+         */
         this.newMarkerGroup = function (map) {
             var mg = this.getGroup(map);
 
             mg.timeout = null;
 
             // custom attribute
-            if (map.fit_markers) {
-                mg.on('layeradd', function (d) {
+            if (map._shouldFitBounds) {
+                mg.on('layeradd', function (event) {
                     // needs a timeout so that it doesn't 
                     // opt out of a bound change
+                    if (event.layer instanceof L.FeatureGroup) {
+                        // wait for featuregroup/ajax-geojson to be ready
+                        event.layer.on('ready', function () {
+                            map.fitBounds(mg.getBounds());
+                        })
+                    }
+                    
                     window.clearTimeout(this.timeout);
                     this.timeout = window.setTimeout(function() {
-                        map.fitBounds(mg.getBounds());
+                        try {
+                            map.fitBounds(mg.getBounds());
+                        } catch (e) {
+                            // ajax-geojson might not have valid bounds yet
+                        }
                     }, 100);
                 }, mg);
             }
@@ -86,6 +127,8 @@
         this.markergroups = {};
         this.markers = [];
         this.lines = [];
+        this.circles = [];
+        this.geojsons = [];
     }
 
     /**
